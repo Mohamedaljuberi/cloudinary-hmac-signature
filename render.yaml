@@ -2,7 +2,9 @@ services:
   - type: web
     name: cloudinary-hmac-signature
     env: python
-    buildCommand: "pip install -r requirements.txt"
-    startCommand: "python3 main.py"
+    buildCommand: |
+      pip install --upgrade pip
+      pip install Flask==3.1.1
+    startCommand: python3 main.py
     plan: free
     pythonVersion: 3.11
