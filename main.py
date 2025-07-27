@@ -5,29 +5,27 @@ import os
 
 app = Flask(__name__)
 
-@app.route('/', methods=['POST'])
+API_SECRET = "bf5MYFfKoqY51s-I3K_Fw9qC0OU"
+
+@app.route("/", methods=["POST"])
 def generate_signature():
     data = request.json
-    params_to_sign = data.get("params", {})
-    api_secret = os.environ.get("CLOUDINARY_API_SECRET")
+    params = data.get("params", {})
 
-    if not api_secret:
-        return jsonify({"error": "Missing CLOUDINARY_API_SECRET env variable"}), 500
+    # Required order for Cloudinary signature
+    ordered_keys = ["overwrite", "public_id", "timestamp", "upload_preset"]
+    ordered_params = [(k, params[k]) for k in ordered_keys if k in params and params[k]]
 
-    # Define correct Cloudinary signing order
-    expected_order = ["overwrite", "public_id", "timestamp", "upload_preset"]
-    sorted_params = [(k, params_to_sign[k]) for k in expected_order if k in params_to_sign and params_to_sign[k]]
-    param_string = "&".join(f"{k}={v}" for k, v in sorted_params)
+    param_string = "&".join(f"{k}={v}" for k, v in ordered_params)
 
-    # Generate signature
     signature = hmac.new(
-        api_secret.encode('utf-8'),
-        param_string.encode('utf-8'),
+        API_SECRET.encode("utf-8"),
+        param_string.encode("utf-8"),
         hashlib.sha1
     ).hexdigest()
 
     return jsonify({"signature": signature})
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
