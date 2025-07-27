@@ -14,7 +14,7 @@ def generate_signature():
     if not api_secret:
         return jsonify({"error": "CLOUDINARY_API_SECRET not set"}), 500
 
-    # ✅ Include upload_preset in allowed keys
+    # ✅ Include all used parameters in signature (upload_preset included!)
     keys_to_sign = ["timestamp", "public_id", "overwrite", "upload_preset"]
     filtered_params = {k: v for k, v in params.items() if k in keys_to_sign and v}
 
@@ -22,10 +22,10 @@ def generate_signature():
     sorted_params = sorted(filtered_params.items())
     param_string = "&".join(f"{k}={v}" for k, v in sorted_params)
 
-    # 🔍 Debug: print the string to sign
+    # 🔍 Debug: see what you're signing
     print("STRING TO SIGN:", param_string)
 
-    # ✅ Generate SHA-1 HMAC signature
+    # ✅ Generate signature
     signature = hmac.new(
         api_secret.encode("utf-8"),
         param_string.encode("utf-8"),
