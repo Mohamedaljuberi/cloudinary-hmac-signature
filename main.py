@@ -14,8 +14,9 @@ def generate_signature():
     if not api_secret:
         return jsonify({"error": "CLOUDINARY_API_SECRET not set"}), 500
 
-    # Build the param string in the original order, skipping empty values
-    param_string = "&".join(f"{k}={v}" for k, v in params.items() if v)
+    # ✅ Sort params alphabetically by key and skip empty values
+    sorted_params = sorted((k, v) for k, v in params.items() if v)
+    param_string = "&".join(f"{k}={v}" for k, v in sorted_params)
 
     signature = hmac.new(
         api_secret.encode("utf-8"),
