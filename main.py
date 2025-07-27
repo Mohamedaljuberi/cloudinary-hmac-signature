@@ -14,18 +14,23 @@ def generate_signature():
     if not api_secret:
         return jsonify({"error": "Missing CLOUDINARY_API_SECRET env variable"}), 500
 
-    # Sort and build the string to sign
-    sorted_params = sorted((k, v) for k, v in params_to_sign.items() if v)
-    param_string = "&".join(f"{k}={v}" for k, v in sorted_params)
+    # Order matters! Follow Cloudinary's expected sort: alphabetical
+    sorted_items = sorted((k, v) for k, v in params_to_sign.items() if v)
 
-    # Generate HMAC-SHA1 signature
+    # Create the exact string to sign
+    param_string = "&".join(f"{k}={v}" for k, v in sorted_items)
+
+    # Sign it
     signature = hmac.new(
         api_secret.encode('utf-8'),
         param_string.encode('utf-8'),
         hashlib.sha1
     ).hexdigest()
 
-    return jsonify({"signature": signature})
+    return jsonify({
+        "signature": signature,
+        "string_to_sign": param_string  # Debug output, remove later
+    })
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 10000))
