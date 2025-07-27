@@ -5,7 +5,7 @@ import os
 
 app = Flask(__name__)
 
-@app.route("/", methods=["POST"])
+@app.route('/', methods=['POST'])
 def generate_signature():
     data = request.json
     params_to_sign = data.get("params", {})
@@ -14,19 +14,22 @@ def generate_signature():
     if not api_secret:
         return jsonify({"error": "Missing CLOUDINARY_API_SECRET env variable"}), 500
 
-    # Sort keys alphabetically and exclude any param with empty/null value
-    sorted_params = sorted((k, v) for k, v in params_to_sign.items() if v)
-    string_to_sign = "&".join(f"{k}={v}" for k, v in sorted_params)
+    # Remove None or empty string values, sort keys alphabetically
+    sorted_params = sorted((k, v) for k, v in params_to_sign.items() if v is not None and v != "")
+    param_string = "&".join(f"{k}={v}" for k, v in sorted_params)
 
-    # Hash it with HMAC-SHA1
+    # Generate signature
     signature = hmac.new(
-        api_secret.encode("utf-8"),
-        string_to_sign.encode("utf-8"),
+        api_secret.encode('utf-8'),
+        param_string.encode('utf-8'),
         hashlib.sha1
     ).hexdigest()
 
-    return jsonify({"signature": signature})
+    return jsonify({
+        "signature": signature,
+        "string_to_sign": param_string  # Optional: helpful for debugging
+    })
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
