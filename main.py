@@ -14,8 +14,9 @@ def generate_signature():
     if not api_secret:
         return jsonify({"error": "Missing CLOUDINARY_API_SECRET env variable"}), 500
 
-    # Remove None or empty string values, sort keys alphabetically
-    sorted_params = sorted((k, v) for k, v in params_to_sign.items() if v is not None and v != "")
+    # Define correct Cloudinary signing order
+    expected_order = ["overwrite", "public_id", "timestamp", "upload_preset"]
+    sorted_params = [(k, params_to_sign[k]) for k in expected_order if k in params_to_sign and params_to_sign[k]]
     param_string = "&".join(f"{k}={v}" for k, v in sorted_params)
 
     # Generate signature
@@ -25,10 +26,7 @@ def generate_signature():
         hashlib.sha1
     ).hexdigest()
 
-    return jsonify({
-        "signature": signature,
-        "string_to_sign": param_string  # Optional: helpful for debugging
-    })
+    return jsonify({"signature": signature})
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 10000))
