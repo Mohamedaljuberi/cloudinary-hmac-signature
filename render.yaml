@@ -3,5 +3,5 @@ services:
     name: cloudinary-hmac-signature
     env: python
     buildCommand: "pip install -r requirements.txt"
-    startCommand: "python3 main.py"
+    startCommand: "pip list && python3 main.py"
     plan: free
