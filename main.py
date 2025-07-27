@@ -14,8 +14,12 @@ def generate_signature():
     if not api_secret:
         return jsonify({"error": "CLOUDINARY_API_SECRET not set"}), 500
 
-    # ✅ Sort and filter out empty params
-    sorted_params = sorted((k, v) for k, v in params.items() if v)
+    # ✅ Only include allowed params (no upload_preset!)
+    keys_to_sign = ["timestamp", "public_id", "overwrite"]
+    filtered_params = {k: v for k, v in params.items() if k in keys_to_sign and v}
+
+    # ✅ Sort alphabetically
+    sorted_params = sorted(filtered_params.items())
     param_string = "&".join(f"{k}={v}" for k, v in sorted_params)
 
     # 🔍 Debug: print the string to sign
