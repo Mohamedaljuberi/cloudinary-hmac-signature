@@ -14,16 +14,15 @@ def generate_signature():
     if not api_secret:
         return jsonify({"error": "CLOUDINARY_API_SECRET not set"}), 500
 
-    # ✅ Include all used parameters in signature (upload_preset included!)
-    keys_to_sign = ["timestamp", "public_id", "overwrite", "upload_preset"]
-    filtered_params = {k: v for k, v in params.items() if k in keys_to_sign and v}
+    # ✅ Include only the required parameters
+    keys_to_sign = ["overwrite", "public_id", "timestamp", "upload_preset"]
+    filtered_params = {k: v for k, v in params.items() if k in keys_to_sign and v is not None}
 
     # ✅ Sort alphabetically
     sorted_params = sorted(filtered_params.items())
     param_string = "&".join(f"{k}={v}" for k, v in sorted_params)
 
-    # 🔍 Debug: see what you're signing
-    print("STRING TO SIGN:", param_string)
+    print("STRING TO SIGN:", param_string)  # 🔍 Debug log
 
     # ✅ Generate signature
     signature = hmac.new(
@@ -35,5 +34,4 @@ def generate_signature():
     return jsonify({"signature": signature})
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 10000))
-    app.run(host="0.0.0.0", port=port)
+    app.run(host="0.0.0.0", port=10000)
