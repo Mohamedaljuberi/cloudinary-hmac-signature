@@ -1,6 +1,5 @@
 from flask import Flask, request, jsonify
 import hashlib
-import hmac
 import time
 import os
 
@@ -8,20 +7,10 @@ app = Flask(__name__)
 
 @app.route("/", methods=["POST"])
 def generate_signature():
-    # Example input JSON:
-    # {
-    #   "params": {
-    #     "public_id": "your_id",
-    #     "upload_preset": "preset",
-    #     "folder": "your_folder",
-    #     "unique_filename": "false"
-    #   }
-    # }
-
     data = request.json
     params = data.get("params", {})
     
-    # Inject current Unix timestamp if not already provided
+    # Add timestamp if missing
     if "timestamp" not in params:
         params["timestamp"] = str(int(time.time()))
 
@@ -29,24 +18,18 @@ def generate_signature():
     if not api_secret:
         return jsonify({"error": "Missing CLOUDINARY_API_SECRET"}), 500
 
-    # Cloudinary says: sign everything EXCEPT file, cloud_name, resource_type, api_key
-    # But include timestamp and any relevant optional fields like folder, public_id, upload_preset, unique_filename
     allowed_keys = [
         "eager", "folder", "invalidate", "overwrite", "public_id",
         "timestamp", "transformation", "upload_preset", "unique_filename"
     ]
-    
-    filtered = {k: v for k, v in params.items() if k in allowed_keys and v is not None}
 
-    # Alphabetical order
+    filtered = {k: v for k, v in params.items() if k in allowed_keys and v is not None}
     sorted_items = sorted(filtered.items())
     string_to_sign = "&".join(f"{k}={v}" for k, v in sorted_items)
 
-    signature = hmac.new(
-        api_secret.encode("utf-8"),
-        string_to_sign.encode("utf-8"),
-        hashlib.sha1
-    ).hexdigest()
+    # 🔥 FIXED: plain SHA1 hash, NOT HMAC
+    signature_raw = string_to_sign + api_secret
+    signature = hashlib.sha1(signature_raw.encode("utf-8")).hexdigest()
 
     return jsonify({
         "signature": signature,
