@@ -10,7 +10,7 @@ def generate_signature():
     data = request.json
     params = data.get("params", {})
 
-    api_secret = os.environ.get("_ylC7lLKLqO4eN6rQK2APIZ-3XM")
+    api_secret = os.environ.get('_ylC7lLKLqO4eN6rQK2APIZ-3XM')
     if not api_secret:
         return jsonify({"error": "CLOUDINARY_API_SECRET not set"}), 500
 
