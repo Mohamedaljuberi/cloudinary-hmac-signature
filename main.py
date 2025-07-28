@@ -1,23 +1,45 @@
-import hmac
+from flask import Flask, request, jsonify
 import hashlib
+import hmac
+import os
 
-# REPLACE with your actual Cloudinary API secret
-api_secret = "wTR7dDMs1ygFiG9mRgxor0QmrPA"
+app = Flask(__name__)
 
-# String to sign (MUST match the fields you're sending to Cloudinary exactly)
-string_to_sign = (
-    "folder=what_is_this&"
-    "public_id=king-henrys-cherry-slices-7oz-holly-market-oakland&"
-    "timestamp=1753671747&"
-    "upload_preset=auto_whatever"
-)
+# ✅ Only include Cloudinary signable upload parameters
+SIGNABLE_KEYS = [
+    "callback", "eager", "folder", "invalidate", "overwrite", "public_id", "timestamp", "transformation", "upload_preset"
+]
 
-# Create HMAC SHA-1 signature
-signature = hmac.new(
-    api_secret.encode('utf-8'),
-    string_to_sign.encode('utf-8'),
-    hashlib.sha1
-).hexdigest()
+@app.route("/", methods=["POST"])
+def generate_signature():
+    data = request.json
+    params = data.get("params", {})
 
-print("✅ Signature:", signature)
-print("🔐 String to Sign:", string_to_sign)
+    api_secret = os.environ.get("CLOUDINARY_API_SECRET")  # Set this securely in your environment
+    if not api_secret:
+        return jsonify({"error": "Missing CLOUDINARY_API_SECRET"}), 500
+
+    # ✅ Filter only allowed parameters and remove None values
+    filtered_params = {
+        k: v for k, v in params.items()
+        if k in SIGNABLE_KEYS and v is not None
+    }
+
+    # ✅ Sort parameters alphabetically by key
+    sorted_items = sorted(filtered_params.items())
+    string_to_sign = "&".join(f"{k}={v}" for k, v in sorted_items)
+
+    # ✅ Generate HMAC-SHA1 signature using Cloudinary secret
+    signature = hmac.new(
+        api_secret.encode("utf-8"),
+        string_to_sign.encode("utf-8"),
+        hashlib.sha1
+    ).hexdigest()
+
+    return jsonify({
+        "signature": signature,
+        "string_to_sign": string_to_sign
+    })
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=10000)
